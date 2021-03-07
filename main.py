@@ -8,18 +8,19 @@ from tinydb import TinyDB, Query
 import asyncio
 import datetime
 
-#Head, Chest, Legs, Boots, Ring, Necklace
-#defense, magic_defense, vitality, max_hp, max_mp, max_dexterity, wisdom, speed
-
 #declaring stuff
 
 tdb = TinyDB('db.json')
 
+mdb = TinyDB('map_db.json')
 intents1 = discord.Intents.all() # Enable all intents
 
 bot = commands.Bot(command_prefix = ["!", "/"], intents=intents1)
 
 tdb_user = Query()
+
+
+
 #exp for levels
 
 lvl_exp =[1, 2, 5, 10, 25, 50, 100, 150, 200, 300, 400, 700, 1500, 5000, 20000, 40000, 61000, 93000, 140000, 200000, 500000, 750000, 1000000, 4000000, 8000000,   20000000, 100000000, 500000000, 1000000000, 3000000000, 6000000000, 10000000000, 20000000000, 40000000000, 100000000000, 200000000000, 3200000000000, 370000000000, 600000000000, 734000000000, 1000000000000, 2000000000000, 3100000000000, 3200000000000, 50000000000000, 620000000000000, 10000000000000, 25000000000000, 50000000000000, 100000000000000, 200000000000000, 310000000000000, 420000000000000, 600000000000000, 1000000000000000, 1300000000000000, 1600000000000000, 2000000000000000, 3000000000000000, 4000000000000000, 5000000000000000, 8000000000000000, 10000000000000000, 20000000000000000, 50000000000000000,  100000000000000000, 500000000000000000, 1000000000000000000, 5000000000000000000, 10000000000000000000, 20000000000000000000, 30000000000000000000, 40000000000000000000, 50000000000000000000, 60000000000000000000, 70000000000000000000, 100000000000000000000, 300000000000000000000, 600000000000000000000, 1000000000000000000000, 2000000000000000000000, 3000000000000000000000, 8405000000000000000000, 10000000000000000000000, 33300000000000000000000, 66600000000000000000000,  100000000000000000000000, 200000000000000000000000, 210000000000000000000000, 3000000000000000000000000, 400000000000000000000000, 500000000000000000000000,  6000000000000000000000000, 7000000000000000000000000, 10000000000000000000000000, 260000000000000000000000000, 34000000000000000000000000, 100000000000000000000000000, 150000000000000000000000000, 200000000000000000000000000, 300000000000000000000000000, 400000000000000000000000000, 1000000000000000000000000000, 2500000000000000000000000000, 5000000000000000000000000000, 7500000000000000000000000000, 10000000000000000000000000000, 11000000000000000000000000000, 12000000000000000000000000000, 13000000000000000000000000000, 14000000000000000000000000000, 15000000000000000000000000000, 17000000000000000000000000000, 22000000000000000000000000000, 33000000000000000000000000000, 50000000000000000000000000000, 60000000000000000000000000000, 70000000000000000000000000000,  80000000000000000000000000000, 100000000000000000000000000000, 200000000000000000000000000000, 300000000000000000000000000000, 400000000000000000000000000000, 500000000000000000000000000000, 600000000000000000000000000000, 700000000000000000000000000000, 800000000000000000000000000000, 900000000000000000000000000000, 1000000000000000000000000000000, 2000000000000000000000000000000, 3000000000000000000000000000000, 4000000000000000000000000000000, 5000000000000000000000000000000, 8700000000000000000000000000000,10000000000000000000000000000000, 25000000000000000000000000000000, 50000000000000000000000000000000, 75000000000000000000000000000000,100000000000000000000000000000000, 200000000000000000000000000000000, 500000000000000000000000000000000, 700000000000000000000000000000000, 1000000000000000000000000000000000, 2000000000000000000000000000000000, 3800000000000000000000000000000000, 5000000000000000000000000000000000, 6000000000000000000000000000000000, 7000000000000000000000000000000000, 8000000000000000000000000000000000,
@@ -46,6 +47,20 @@ global amber_ring
 global stone_chestplate
 global stone_leggings
 global sandals
+
+class mob:
+  def __init__(self, close_defense, magic_defense, ranged_defense, vitality, max_hp, max_mp, max_dexterity, wisdom, speed, name, drops, chances):
+    self.cqcd = close_defense
+    self.md = magic_defense
+    self.rd = ranged_defense
+    self.vit = vitality
+    self.mx_hp = max_hp
+    self.mx_mp = max_mp
+    self.mx_dex = max_dexterity
+    self.wis = wisdom
+    self.spd = speed
+    self.nm = name
+
 
 wooden_helmet = {
   "name": "wooden_helmet",
@@ -539,11 +554,12 @@ def Add_Inv(item, inventory_id):
 
   tdb.update({"inventory":  set_inv_to}, tdb_user.id == inventory_id)
 
-def Hand(item, hand_id):
-  
-  hand_now = tdb.search(tdb_user.id == hand_id)[0]["hand"]
+def Hand(item, id):
+  wearing_now = tdb.search(tdb_user.id == id)[0]["wearing"]
 
-  inv_now = tdb.search(tdb_user.id == hand_id)[0]["inventory"]
+  hand_now = wearing_now["hand"]
+
+  inv_now = tdb.search(tdb_user.id == id)[0]["inventory"]
 
   set_hand_to = [item]
 
@@ -554,19 +570,26 @@ def Hand(item, hand_id):
   if len(hand_now) > 0:
     set_inv_to.append(hand_now[0])
 
-  tdb.update({"inventory":  set_inv_to}, tdb_user.id == hand_id)
+  tdb.update({"inventory":  set_inv_to}, tdb_user.id == id)
 
-  tdb.update({"hand":  set_hand_to}, tdb_user.id == hand_id)
+  set_wearing_to = wearing_now
+  set_wearing_to["hand"] = set_hand_to
+
+  tdb.update({"wearing":  set_wearing_to}, tdb_user.id == id)
 
 def Dequip(id):
-  hand = tdb.search(tdb_user.id == id)[0]["hand"]
+  wearing_now = tdb.search(tdb_user.id == id)[0]["wearing"]
+  hand = wearing_now["hand"]
   inv_now = tdb.search(tdb_user.id == id)[0]["inventory"]
 
   inv_now.append(hand[0])
 
   set_inv_to = inv_now
 
-  tdb.update({"hand": []}, tdb_user.id == id)
+  set_wearing_to = wearing_now
+  set_wearing_to["hand"] = []
+
+  tdb.update({"wearing": set_wearing_to}, tdb_user.id == id)
   
   
   tdb.update({"inventory":  set_inv_to}, tdb_user.id == id)
@@ -574,7 +597,8 @@ def Dequip(id):
 
 def Mine(id):
   """Mines """
-  hand = tdb.search(tdb_user.id == id)[0]["hand"]
+  wearing_now = tdb.search(tdb_user.id == id)
+  hand = wearing_now["hand"]
 
   
   #minus hits
@@ -583,10 +607,14 @@ def Mine(id):
   stats =[False, 0, False]
   hand[0]["hits"] = hand[0]["hits"] - damage
   updated_hits = hand
-  tdb.update({"hand": updated_hits}, tdb_user.id == id)
 
-  if tdb.search(tdb_user.id == id)[0]["hand"][0]["hits"] == 0:
-    tdb.update({"hand": []}, tdb_user.id == id)
+  set_wearing_to = wearing_now
+  set_wearing_to["hand"] = updated_hits
+  tdb.update({"wearing": set_wearing_to}, tdb_user.id == id)
+
+  if wearing_now["hand"][0]["hits"] == 0:
+    set_wearing_to["hand"] = []
+    tdb.update({"wearing": set_wearing_to}, tdb_user.id == id)
     stats[0] = True
   
   #stmaina
@@ -630,12 +658,6 @@ async def Stamina_Add(amount):
 
 
 
-
-
-
-
-
-
 #Login console
 @bot.event
 async def on_ready():
@@ -644,12 +666,13 @@ async def on_ready():
 @bot.command()
 async def mine(ctx):
   """ You can mine using your pickaxe held in your hand. Mine only works in mines. """
-  hand = tdb.search(tdb_user.id == ctx.author.id)[0]["hand"]
+  wearing_now = tdb.search(tdb_user.id == ctx.author.id)
+  hand = wearing_now["hand"]
 
   if len(hand) == 0:
     await ctx.channel.send(ctx.author.name +" Your hand is empty, you can not mine.")
 
-  elif hand[0]["name"][-7:] != "pickaxe":
+  elif hand[0]["type"] != "pickaxe":
     await ctx.channel.send(ctx.author.name +" You must be holding a pickaxe to mine.")
   elif str(ctx.channel) == "mine" or str(ctx.channel) == "mine-2" or str(ctx.channel) == "mine-3" or str(ctx.channel) == "mine-4" or str(ctx.channel) == "mine-5":
     
@@ -666,7 +689,7 @@ async def mine(ctx):
         else:
           await ctx.channel.send(ctx.author.name+ " got no gold after mining.\n\n Your pickaxe has now got " + str(hand[0]["hits"]) + " **hits** left.\n\n Your **stamina**:" + str(tdb.search(tdb_user.id == ctx.author.id)[0]["stamina"]))
     else:
-      await ctx.channel.send(ctx.author.name + " You don't have enough stamina to mine.\n\n **Your stamina**:" + str(tdb.search(tdb_user.id == ctx.author.id)[0]["stamina"]) + " .\n\n **Required stamina**: " + str(tdb.search(tdb_user.id == ctx.author.id)[0]["hand"][0]["stamina_take"]))
+      await ctx.channel.send(ctx.author.name + " You don't have enough stamina to mine.\n\n **Your stamina**:" + str(tdb.search(tdb_user.id == ctx.author.id)[0]["stamina"]) + " .\n\n **Required stamina**: " + str(tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"]["hand"][0]["stamina_take"]))
 
   else:
 
@@ -694,17 +717,19 @@ async def register(ctx):
       "name": ctx.author.name,
       "discriminator": ctx.author.discriminator,
       "inventory": [],
-      "hand": [],
       "max_stamina": 100,
       "health": 100,
       "max_health": 100,
       "wearing": {
-        "head": {},
-        "necklace": {},
-        "ring": {},
-        "chest":{},
-        "legs": {},
-        "feet": {}},
+        "head": [],
+        "necklace": [],
+        "ring": [],
+        "back": [],
+        "chest":[],
+        "legs": [],
+        "feet": [],
+        "hand": [],
+      },
       "stats": [{"close_defense": 10,
         "magic_defense": 10,
         "ranged_defense": 10,
@@ -838,15 +863,16 @@ async def hand(ctx):
       await ctx.channel.send(ctx.author.name +" The item you wanted to hand is not in your inventory")
     Hand(out, ctx.author.id)
     
-    await ctx.channel.send(ctx.author.name +" Your are now holding: " + str(tdb.search(tdb_user.id == ctx.author.id)[0]["hand"][0]["name"]))
+    await ctx.channel.send(ctx.author.name +" Your are now holding: " + str(tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"]["hand"][0]["name"]))
 
 
 @bot.command()
 async def in_hand(ctx):
   """Shows whats in your hand """
+  hand = tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"]["hand"]
 
-  if len((tdb.search(tdb_user.id == ctx.author.id)[0]["hand"])) > 0:
-    await ctx.send(ctx.author.name +" In your hand you have: " + tdb.search(tdb_user.id == ctx.author.id)[0]["hand"][0]["name"])
+  if len(hand) > 0:
+    await ctx.send(ctx.author.name +" In your hand you have: " + hand[0]["name"])
   else:
     await ctx.send(ctx.author.name +" You hand is empty")
 
@@ -854,10 +880,10 @@ async def in_hand(ctx):
 @bot.command()             
 async def dehand(ctx):
   "Makes your hand empty"  
-  in_hand = tdb.search(tdb_user.id == ctx.author.id)[0]["hand"]
+  in_hand = tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"]["hand"]
 
   if len(in_hand) > 0:
-    item = tdb.search(tdb_user.id == ctx.author.id)[0]["hand"][0]["name"]
+    item = in_hand[0]["name"]
     Dequip(ctx.author.id)
 
     await ctx.channel.send(ctx.author.name +" You have dehanded your " + item + ". It is no longer in your hand.")
