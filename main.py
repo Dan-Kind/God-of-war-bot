@@ -7,6 +7,7 @@ from discord.ext import commands
 from tinydb import TinyDB, Query
 import asyncio
 import datetime
+from colorama import Fore, Back, Style 
 
 #declaring stuff
 
@@ -49,7 +50,7 @@ global stone_leggings
 global sandals
 
 class mob:
-  def __init__(self, close_defense, magic_defense, ranged_defense, vitality, max_hp, max_mp, max_dexterity, wisdom, speed, name, drops, chances):
+  def __init__(self, close_defense, magic_defense, ranged_defense, vitality, max_hp, max_mp, max_dexterity, wisdom, speed, name, drops, element, damage_type, damage, accuracy, gold):
     self.cqcd = close_defense
     self.md = magic_defense
     self.rd = ranged_defense
@@ -60,6 +61,18 @@ class mob:
     self.wis = wisdom
     self.spd = speed
     self.nm = name
+    self.drps = drops
+    self.elmt = element
+    self.type = damage_type
+    self.dmg = damage
+    self.acc = accuracy
+    self.gld = gold
+
+goblin = mob(15, 5, 10, 2, 40, 0, 15, 0, 20, "goblin", [], "earth", "close", 10, 80, 100)
+
+
+
+
 
 
 wooden_helmet = {
@@ -661,7 +674,7 @@ async def Stamina_Add(amount):
 #Login console
 @bot.event
 async def on_ready():
-  print("Just logged in as {0.user}".format(bot))
+  print(Fore.GREEN +"\n\nJust logged in as " + Back.RED+" {0.user}".format(bot))
 
 @bot.command()
 async def mine(ctx):
@@ -943,13 +956,23 @@ async def stats(ctx):
   await ctx.send(tdb.search(tdb_user.id == ctx.author.id)[0]["stats"])
 
 @bot.command()
-async def equip(ctx, item):
+async def equip(ctx, item_name):
 
-  if tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"][globals()[item]["type"]] == {}:
+  item = {}
 
+  for x in tdb.search(tdb_user.id == ctx.author.id)[0]["inventory"]:
+    if x["name"] == item_name:
+      item = x
+      break
+    
+  if item == {}:
+    ctx.send(item_name + " can not be found in your inventory")
+
+  elif tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"][item["slot"]] == []:
+    
     update = tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"]
 
-    update[globals()[item]["type"]] = globals()[item]
+    update[item["slot"]] = item
 
     tdb.update({"wearing": update}, tdb_user.id == ctx.author.id)
 
@@ -962,37 +985,45 @@ async def equip(ctx, item):
     await ctx.send("You have equiped " + item)
 
   else:
-    slot_now = tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"][globals()[item]["type"]]
+    slot_now = tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"][globals()[item]["slot"]]
 
     inv_now = tdb.search(tdb_user.id == ctx.author.id)[0]["inventory"]
 
     inv_now.append(slot_now)
 
     inv_now.remove(globals()[item])
-
-    print(inv_now)
     
     tdb.update({"inventory": inv_now}, tdb_user.id == ctx.author.id)
 
     update = tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"]
 
-    update[globals()[item]["type"]] = globals()[item]
+    update[globals()[item]["slot"]] = globals()[item]
 
     tdb.update({"wearing": update}, tdb_user.id == ctx.author.id)
 
     await ctx.send("You have dequipped your " + slot_now["name"] + " and you have equipped your " + item)
 
 @bot.command()
-async def dequip(ctx, item):
-  slot_now = globals()[item]["slot"]
+async def dequip(ctx, slot):
+  """"head necklace ring back chest legs feet hand"""
+  user = tdb.search(tdb_user.id == ctx.author.id)[0]
 
-  inv_now = tdb.search(tdb_user.id == ctx.author.id)[0]["inventory"]
+  if not user["wearing"][slot]:
+    await ctx.send("Your "+ slot + " is already empty")
+  else:
+    inv_set = user["inventory"]
+    inv_set.append(user["wearing"][slot][0])
 
-  inv_now.append(slot_now)
+    wearing_set = user["wearing"]
+    wearing_set[slot] = []
 
-  tdb.update({"inventory": inv_now}, tdb_user.id == ctx.author.id)
-    
-  await ctx.send("You have dequipped your " +item)
+    tdb.update({"inventory": inv_set}, tdb_user.id == ctx.author.id)
+    tdb.update({"wearing": wearing_set}, tdb_user.id == ctx.author.id)
+
+    print(user["wearing"][slot])
+
+    item_name = user["wearing"][slot][0]["name"]
+    await ctx.send("You have dequipped your " + item_name)
 
 
 @bot.command()
@@ -1003,7 +1034,11 @@ async def wearing(ctx):
   out = out.replace("}", "")
   out = out.replace("'", "")
   out = out.replace(",", "\n")
+  out = out.replace("]", "]\n")
+  out = out.replace("[]", " empty")
   await ctx.send(out)
+
+
 
 #Keeps bot running by pinging with UptimeRobot on https://uptimerobot.com/dashboard#787220625
 
