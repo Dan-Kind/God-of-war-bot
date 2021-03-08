@@ -7,10 +7,10 @@ from discord.ext import commands
 from tinydb import TinyDB, Query
 import asyncio
 import datetime
-from colorama import Fore, Back, Style 
+from colorama import Fore, Back, init
 
 #declaring stuff
-
+init(autoreset = True)
 tdb = TinyDB('db.json')
 
 mdb = TinyDB('map_db.json')
@@ -1011,19 +1011,23 @@ async def dequip(ctx, slot):
   if not user["wearing"][slot]:
     await ctx.send("Your "+ slot + " is already empty")
   else:
+    print(user["wearing"][slot])
+    item_name = user["wearing"][slot][0]["name"]
+    await ctx.send("You have dequipped your " + item_name)
+
     inv_set = user["inventory"]
     inv_set.append(user["wearing"][slot][0])
 
     wearing_set = user["wearing"]
     wearing_set[slot] = []
-
+    
     tdb.update({"inventory": inv_set}, tdb_user.id == ctx.author.id)
     tdb.update({"wearing": wearing_set}, tdb_user.id == ctx.author.id)
 
     print(user["wearing"][slot])
 
-    item_name = user["wearing"][slot][0]["name"]
-    await ctx.send("You have dequipped your " + item_name)
+    
+    
 
 
 @bot.command()
