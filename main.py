@@ -501,24 +501,7 @@ fuck_you1 = ["https://tenor.com/view/pixel-art-crawling-scary-onii-chan-anime-gi
 factions = ["Anals","B-soceity","Farmers","TTHFFT"]
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 #defining stuff
-def element_damage_cal(attacker_element, defender_element):
-  pass
-
-
 
 def Betala(giving, getting, amount):
   """Pay by updating db gold the getting(id) the amount(float) and subtract the giving persons db gold that amount. Cannot pay more than you own. No going minus.
@@ -550,10 +533,8 @@ def Betala(giving, getting, amount):
   #getter set
   tdb.update({"gold" : float(set_getter_gold_to)}, tdb_user.id == int(getting))
 
-
 def Get_ID(name):
   return tdb.search(tdb_user.name == name)[0]["id"]
-
 
 def Add_Inv(item, inventory_id):
 
@@ -566,47 +547,6 @@ def Add_Inv(item, inventory_id):
   set_inv_to.append(item)
 
   tdb.update({"inventory":  set_inv_to}, tdb_user.id == inventory_id)
-
-def Hand(item, id):
-  wearing_now = tdb.search(tdb_user.id == id)[0]["wearing"]
-
-  hand_now = wearing_now["hand"]
-
-  inv_now = tdb.search(tdb_user.id == id)[0]["inventory"]
-
-  set_hand_to = [item]
-
-  set_inv_to = inv_now
-
-  set_inv_to.remove(item)
-  
-  if len(hand_now) > 0:
-    set_inv_to.append(hand_now[0])
-
-  tdb.update({"inventory":  set_inv_to}, tdb_user.id == id)
-
-  set_wearing_to = wearing_now
-  set_wearing_to["hand"] = set_hand_to
-
-  tdb.update({"wearing":  set_wearing_to}, tdb_user.id == id)
-
-def Dequip(id):
-  wearing_now = tdb.search(tdb_user.id == id)[0]["wearing"]
-  hand = wearing_now["hand"]
-  inv_now = tdb.search(tdb_user.id == id)[0]["inventory"]
-
-  inv_now.append(hand[0])
-
-  set_inv_to = inv_now
-
-  set_wearing_to = wearing_now
-  set_wearing_to["hand"] = []
-
-  tdb.update({"wearing": set_wearing_to}, tdb_user.id == id)
-  
-  
-  tdb.update({"inventory":  set_inv_to}, tdb_user.id == id)
-
 
 def Mine(id):
   """Mines """
@@ -670,7 +610,6 @@ async def Stamina_Add(amount):
     await asyncio.sleep(60)
 
 
-
 #Login console
 @bot.event
 async def on_ready():
@@ -714,9 +653,6 @@ async def money(ctx):
   """Writes amount of money (as in gold)"""
   await ctx.channel.send("You currently have " + str(tdb.search(tdb_user.id == ctx.author.id)[0]["gold"]) + " gold")
 
-
-#Adds authors id to the db, giving them 10 gold in the process
-#!register
 @bot.command()
 async def register(ctx):
   """Registers user to database """
@@ -839,7 +775,6 @@ async def buy(ctx, to_buy):
     else:
       await ctx.channel.send("You must be at a shop to shop.")
 
-
 @bot.command()
 async def inventory(ctx):
   """Writes your inventory """
@@ -856,53 +791,6 @@ async def inventory(ctx):
 
     await ctx.channel.send(ctx.author.name +"s inventory is: " + inv_string)
     
-@bot.command()
-async def hand(ctx):
-  """Puts stuff in your hand. !hand (item_name)"""
-  if len(str(ctx.message.content).split(" ")) == 1:
-    pass
-  else:
-    
-    item_name = str(ctx.message.content).split(" ")[1]
-
-    user_inv = tdb.search(tdb_user.id == ctx.author.id)[0]["inventory"]    
-
-    out = ""
-    for x in user_inv:
-      if x["name"] == item_name:
-        out = x
-        break
-    if out == "":
-      await ctx.channel.send(ctx.author.name +" The item you wanted to hand is not in your inventory")
-    Hand(out, ctx.author.id)
-    
-    await ctx.channel.send(ctx.author.name +" Your are now holding: " + str(tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"]["hand"][0]["name"]))
-
-
-@bot.command()
-async def in_hand(ctx):
-  """Shows whats in your hand """
-  hand = tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"]["hand"]
-
-  if len(hand) > 0:
-    await ctx.send(ctx.author.name +" In your hand you have: " + hand[0]["name"])
-  else:
-    await ctx.send(ctx.author.name +" You hand is empty")
-
-
-@bot.command()             
-async def dehand(ctx):
-  "Makes your hand empty"  
-  in_hand = tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"]["hand"]
-
-  if len(in_hand) > 0:
-    item = in_hand[0]["name"]
-    Dequip(ctx.author.id)
-
-    await ctx.channel.send(ctx.author.name +" You have dehanded your " + item + ". It is no longer in your hand.")
-  else:
-    await ctx.channel.send(ctx.author.name +" You hand is already empty")
-
 @bot.command()
 async def stamina(ctx):
   """Writes your stamina """
@@ -937,7 +825,6 @@ async def leaderboard(ctx):
 
   await ctx.send(x.strftime("%c")+ "\n" + out[:-5])
   
-
 @bot.command()
 async def update_name(ctx):
   """If you've changed name since you registered, this command can be used to update your name in the database to your new one. """
@@ -1022,12 +909,6 @@ async def dequip(ctx, slot):
     tdb.update({"inventory": inv_set}, tdb_user.id == ctx.author.id)
     tdb.update({"wearing": wearing_set}, tdb_user.id == ctx.author.id)
 
-    
-
-    
-    
-
-
 @bot.command()
 async def wearing(ctx):
   out = str(tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"])
@@ -1040,13 +921,9 @@ async def wearing(ctx):
   out = out.replace("[]", " empty")
   await ctx.send(out)
 
-
-
 #Keeps bot running by pinging with UptimeRobot on https://uptimerobot.com/dashboard#787220625
 
 keep_alive()
-
-
 
 async def runner():
   await bot.connect()
@@ -1061,8 +938,6 @@ try:
 finally:
   pass
 
-
-#Runs bot with key found in the env file
 
 
 
