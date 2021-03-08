@@ -137,7 +137,7 @@ wooden_slippers = {
   "defense": 3,
   "health": 10,
   "weakness": "fire",
-  "slots": "feet",
+  "slot": "feet",
   "type": "boots",
 }
 
@@ -958,50 +958,48 @@ async def stats(ctx):
 @bot.command()
 async def equip(ctx, item_name):
 
-  item = {}
-
-  for x in tdb.search(tdb_user.id == ctx.author.id)[0]["inventory"]:
+  user = tdb.search(tdb_user.id == ctx.author.id)[0]
+  #declaring item and finding first matching item with name item_name in inv
+  item = False
+  for x in user["inventory"]:
     if x["name"] == item_name:
       item = x
       break
+  
+  #check if item exists
+  slot = item["slot"]
+  if not item:
+    await ctx.send(item_name + " can not be found in your inventory.")
+
+  elif len(user["wearing"][slot]) > 0:
+    #item found in inv but slot is already full
+
+    wearing_set = user["wearing"]
+    inventory_set = user["inventory"]
+
+    add_inv = wearing_set[slot][0]
+    inventory_set.append(add_inv)
     
-  if item == {}:
-    ctx.send(item_name + " can not be found in your inventory")
+    wearing_set[slot] = [item]
+    inventory_set.remove(item)
 
-  elif tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"][item["slot"]] == []:
-    
-    update = tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"]
+    tdb.update({"wearing": wearing_set}, tdb_user.id == ctx.author.id)
+    tdb.update({"inventory": inventory_set}, tdb_user.id == ctx.author.id)
 
-    update[item["slot"]] = item
-
-    tdb.update({"wearing": update}, tdb_user.id == ctx.author.id)
-
-    inv_now = tdb.search(tdb_user.id == ctx.author.id)[0]["inventory"]
-
-    inv_now.remove(globals()[item])
-
-    tdb.update({"inventory": inv_now}, tdb_user.id == ctx.author.id)    
-
-    await ctx.send("You have equiped " + item)
-
+    await ctx.send(item_name + " has been equipped to your " + slot + " and dequipped your " + add_inv["name"] + ".")
   else:
-    slot_now = tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"][globals()[item]["slot"]]
+    #item found in inv and slot empty
 
-    inv_now = tdb.search(tdb_user.id == ctx.author.id)[0]["inventory"]
+    wearing_set = user["wearing"]
+    inventory_set = user["inventory"]
 
-    inv_now.append(slot_now)
+    wearing_set[slot] = [item]
+    inventory_set.remove(item)
 
-    inv_now.remove(globals()[item])
-    
-    tdb.update({"inventory": inv_now}, tdb_user.id == ctx.author.id)
+    tdb.update({"wearing": wearing_set}, tdb_user.id == ctx.author.id)
+    tdb.update({"inventory": inventory_set}, tdb_user.id == ctx.author.id)
 
-    update = tdb.search(tdb_user.id == ctx.author.id)[0]["wearing"]
-
-    update[globals()[item]["slot"]] = globals()[item]
-
-    tdb.update({"wearing": update}, tdb_user.id == ctx.author.id)
-
-    await ctx.send("You have dequipped your " + slot_now["name"] + " and you have equipped your " + item)
+    await ctx.send(item_name + " has been equipped to your " + slot)
 
 @bot.command()
 async def dequip(ctx, slot):
@@ -1024,7 +1022,7 @@ async def dequip(ctx, slot):
     tdb.update({"inventory": inv_set}, tdb_user.id == ctx.author.id)
     tdb.update({"wearing": wearing_set}, tdb_user.id == ctx.author.id)
 
-    print(user["wearing"][slot])
+    
 
     
     
