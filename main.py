@@ -551,7 +551,7 @@ def Add_Inv(item, inventory_id):
 def convert_cord_to_map(x,y):
   map_ = [[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],]
 
-  map_[y][x] = "x"
+  map_[y][x] = "X"
 
   out = ""
   for z1 in range(len(map_)):
@@ -561,6 +561,41 @@ def convert_cord_to_map(x,y):
         out = out + x1
   
   return out
+
+def Move_Func(direction, id):
+  user = tdb.search(tdb_user.id == id)[0]
+
+  map_len = 9
+
+  max_distance = False
+  if direction == "north":
+    if user["coordinates"][1] == 0:
+      max_distance = True
+    else:
+      user["coordinates"][1] = user["coordinates"][1] - 1
+      tdb.update({"coordinates": user["coordinates"]}, tdb_user.id == id)
+
+  if direction == "south":
+    if user["coordinates"][1] == map_len:
+      max_distance = True
+    else:
+      user["coordinates"][1] = user["coordinates"][1] + 1
+      tdb.update({"coordinates": user["coordinates"]}, tdb_user.id == id)
+
+  if direction == "east":
+    if user["coordinates"][0] == map_len:
+      max_distance = True
+    else:
+      user["coordinates"][0] = user["coordinates"][0] + 1
+      tdb.update({"coordinates": user["coordinates"]}, tdb_user.id == id)
+
+  if direction == "west":
+    if user["coordinates"][0] == 0:
+      max_distance = True
+    else:
+      user["coordinates"][0] = user["coordinates"][0] - 1
+      tdb.update({"coordinates": user["coordinates"]}, tdb_user.id == id)
+  return max_distance
 
 def Mine(id):
   """Mines """
@@ -943,6 +978,25 @@ async def where(ctx):
   user = tdb.search(tdb_user.id == ctx.author.id)[0]
 
   await ctx.send(convert_cord_to_map(user["coordinates"][0],user["coordinates"][1]))
+
+@bot.command()
+async def go(ctx, direction):
+  """Shows your whereabouts."""
+  #0 = X #1 = y
+
+  direction_precise = direction.lower()
+
+  if direction_precise != "north" and direction_precise != "west" and direction_precise != "south" and direction_precise != "east":
+    await ctx.send(direction + " is not a valid direction")
+  else:
+      
+    if not Move_Func(direction_precise, ctx.author.id):
+      user = tdb.search(tdb_user.id == ctx.author.id)[0]  
+
+      await ctx.send("moved "+ direction_precise + "\n" + convert_cord_to_map(user["coordinates"][0],user["coordinates"][1]))
+    else:
+      user = tdb.search(tdb_user.id == ctx.author.id)[0]  
+      await ctx.send("You are at the edge of the map \n"+ convert_cord_to_map(user["coordinates"][0],user["coordinates"][1]))
 
 #Keeps bot running by pinging with UptimeRobot on https://uptimerobot.com/dashboard#787220625
 
