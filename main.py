@@ -548,6 +548,20 @@ def Add_Inv(item, inventory_id):
 
   tdb.update({"inventory":  set_inv_to}, tdb_user.id == inventory_id)
 
+def convert_cord_to_map(x,y):
+  map_ = [[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],[["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"],["o"]],]
+
+  map_[y][x] = "x"
+
+  out = ""
+  for z1 in range(len(map_)):
+    out = out + "\n"
+    for y1 in map_[z1]:
+      for x1 in y1[0]:
+        out = out + x1
+  
+  return out
+
 def Mine(id):
   """Mines """
   wearing_now = tdb.search(tdb_user.id == id)
@@ -920,6 +934,15 @@ async def wearing(ctx):
   out = out.replace("]", "]\n")
   out = out.replace("[]", " empty")
   await ctx.send(out)
+
+@bot.command()
+async def where(ctx):
+  """Shows your whereabouts."""
+  #0 = X #1 = y
+
+  user = tdb.search(tdb_user.id == ctx.author.id)[0]
+
+  await ctx.send(convert_cord_to_map(user["coordinates"][0],user["coordinates"][1]))
 
 #Keeps bot running by pinging with UptimeRobot on https://uptimerobot.com/dashboard#787220625
 
