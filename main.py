@@ -364,6 +364,7 @@ stone_pickaxe = {
   "hardness": 1,
   "drop_multiplier": 1,
   "type": "pickaxe",
+  "slot": "hand",
 }
 
 copper_pickaxe = {
@@ -375,6 +376,7 @@ copper_pickaxe = {
   "hardness": 2,
   "drop_multiplier": 1,
   "type": "pickaxe",
+  "slot": "hand",
 }
 
 tin_pickaxe = {
@@ -386,6 +388,7 @@ tin_pickaxe = {
   "hardness": 10,
   "drop_multiplier": 2,
   "type": "pickaxe",
+  "slot": "hand",
 }
 
 iron_pickaxe = {
@@ -397,6 +400,7 @@ iron_pickaxe = {
   "hardness": 30,
   "drop_multiplier": 10,
   "type": "pickaxe",
+  "slot": "hand",
 }
 
 steel_pickaxe = {
@@ -408,6 +412,7 @@ steel_pickaxe = {
   "hardness": 35,
   "drop_multiplier": 60,
   "type": "pickaxe",
+  "slot": "hand",
 }
 
 titanium_pickaxe = {
@@ -419,6 +424,7 @@ titanium_pickaxe = {
   "hardness": 100,
   "drop_multiplier": 360,
   "type": "pickaxe",
+  "slot": "hand",
 }
 
 cobalt_pickaxe = {
@@ -430,6 +436,7 @@ cobalt_pickaxe = {
   "hardness": 300,
   "drop_multiplier": 1000,
   "type": "pickaxe",
+  "slot": "hand",
 }
 
 mythic_pickaxe = {
@@ -441,6 +448,7 @@ mythic_pickaxe = {
   "hardness": 1000,
   "drop_multiplier": 5000,
   "type": "pickaxe",
+  "slot": "hand",
 }
 
 molten_pickaxe = {
@@ -452,6 +460,7 @@ molten_pickaxe = {
   "hardness": 3000,
   "drop_multiplier": 75000,
   "type": "pickaxe",
+  "slot": "hand",
 }
 
 nuclear_pickaxe = {
@@ -463,6 +472,7 @@ nuclear_pickaxe = {
   "hardness": 20000,
   "drop_multiplier": 5000000,
   "type": "pickaxe",
+  "slot": "hand",
 }
 
 fusion_pickaxe = {
@@ -474,6 +484,7 @@ fusion_pickaxe = {
   "hardness": 100,
   "drop_multiplier": 100000000,
   "type": "pickaxe",
+  "slot": "hand",
 }
 
 quantum_pickaxe = {
@@ -485,6 +496,7 @@ quantum_pickaxe = {
   "hardness": 3000,
   "drop_multiplier": 75000,
   "type": "pickaxe",
+  "slot": "hand",
 
 }
 pickaxes = [stone_pickaxe, copper_pickaxe, tin_pickaxe, iron_pickaxe, steel_pickaxe, titanium_pickaxe, cobalt_pickaxe, mythic_pickaxe, molten_pickaxe]
@@ -500,7 +512,8 @@ fuck_you1 = ["https://tenor.com/view/pixel-art-crawling-scary-onii-chan-anime-gi
 
 factions = ["Anals","B-soceity","Farmers","TTHFFT"]
 
-
+global m
+m = ["shop\n|\n|\nv\noooooooooo\noooooooooo\noooooooooo\noooooooooo\noooooooooo\noooooooooo\noooooooooo\noooooooooo\noooooooooo\noooooooooo <---- mine"]
 #defining stuff
 
 def Betala(giving, getting, amount):
@@ -599,8 +612,9 @@ def Move_Func(direction, id):
 
 def Mine(id):
   """Mines """
-  wearing_now = tdb.search(tdb_user.id == id)
-  hand = wearing_now["hand"]
+  user = tdb.search(tdb_user.id == id)[0]
+  wearing_now = user["wearing"]
+  hand = user["wearing"]["hand"]
 
   
   #minus hits
@@ -667,7 +681,8 @@ async def on_ready():
 @bot.command()
 async def mine(ctx):
   """ You can mine using your pickaxe held in your hand. Mine only works in mines. """
-  wearing_now = tdb.search(tdb_user.id == ctx.author.id)
+  user = tdb.search(tdb_user.id == ctx.author.id)[0]
+  wearing_now = user["wearing"]
   hand = wearing_now["hand"]
 
   if len(hand) == 0:
@@ -675,7 +690,7 @@ async def mine(ctx):
 
   elif hand[0]["type"] != "pickaxe":
     await ctx.channel.send(ctx.author.name +" You must be holding a pickaxe to mine.")
-  elif str(ctx.channel) == "mine" or str(ctx.channel) == "mine-2" or str(ctx.channel) == "mine-3" or str(ctx.channel) == "mine-4" or str(ctx.channel) == "mine-5":
+  elif user["coordinates"] == [9,9]:
     
     x = Mine(ctx.author.id)
     if x[2] == False:
@@ -779,7 +794,10 @@ async def fuck_you(ctx):
 @bot.command()
 async def shop(ctx):
   """Sends content of shop. Only usable at shop. """
-  if str(ctx.channel) == "shop":
+
+  user = tdb.search(tdb_user.id == ctx.author.id)[0]
+
+  if user["coordinates"] == [0,0]:
 
     await ctx.channel.send(f'{pickaxes_string}\n{helmets_string}\n{necklaces_string}\n{rings_string}\n{chests_string}\n{leggings_string}\n{boots_string}')
 
@@ -794,7 +812,8 @@ async def shop(ctx):
 @bot.command()
 async def buy(ctx, to_buy):
   """Buys item from shop you specified after !buy. !buy (item_name) (amount of stuff) """
-  if str(ctx.channel) == "shop":
+  user = tdb.search(tdb_user.id == ctx.author.id)[0]
+  if user["coordinates"] == [0,0]:
 
     if len(ctx.message.content.split(" ")) == 1:
       return
@@ -983,20 +1002,27 @@ async def where(ctx):
 async def go(ctx, direction):
   """Shows your whereabouts."""
   #0 = X #1 = y
-
+  times = 1
+  if len(ctx.message.content.split(" ")) > 2:
+    times = ctx.message.content.split(" ")[2]
   direction_precise = direction.lower()
 
   if direction_precise != "north" and direction_precise != "west" and direction_precise != "south" and direction_precise != "east":
     await ctx.send(direction + " is not a valid direction")
   else:
-      
-    if not Move_Func(direction_precise, ctx.author.id):
-      user = tdb.search(tdb_user.id == ctx.author.id)[0]  
+    for x in range(int(times)):  
+      if not Move_Func(direction_precise, ctx.author.id):
+        user = tdb.search(tdb_user.id == ctx.author.id)[0]  
 
-      await ctx.send("moved "+ direction_precise + "\n" + convert_cord_to_map(user["coordinates"][0],user["coordinates"][1]))
-    else:
-      user = tdb.search(tdb_user.id == ctx.author.id)[0]  
-      await ctx.send("You are at the edge of the map \n"+ convert_cord_to_map(user["coordinates"][0],user["coordinates"][1]))
+        await ctx.send("moved "+ direction_precise + "\n" + convert_cord_to_map(user["coordinates"][0],user["coordinates"][1]))
+      else:
+        user = tdb.search(tdb_user.id == ctx.author.id)[0]  
+        await ctx.send("You are at the edge of the map \n"+ convert_cord_to_map(user["coordinates"][0],user["coordinates"][1]))
+        break
+@bot.command()
+async def map(ctx):
+  await ctx.send(globals()["m"][0])
+
 
 #Keeps bot running by pinging with UptimeRobot on https://uptimerobot.com/dashboard#787220625
 
